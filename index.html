@@ -1,1 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Hub | My Games</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
 
+    <nav class="navbar">
+        <div class="logo">ARCADE<span>HUB</span></div>
+        <div class="search-container">
+            <input type="text" id="gameSearch" placeholder="Search games...">
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <span class="badge">Featured Game</span>
+            <h1>Galactic Defender</h1>
+            <p>Retro-style space shooter. Protect the base from incoming waves of aliens.</p>
+            <a href="./games/space-shooter/" class="btn-main">Play Now</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="action">Action</button>
+            <button class="filter-btn" data-filter="puzzle">Puzzle</button>
+            <button class="filter-btn" data-filter="retro">Retro</button>
+        </div>
+
+        <section class="game-grid" id="gameGrid">
+            <div class="game-card" data-category="retro">
+                <div class="card-img" style="background-color: #333;"></div>
+                <div class="card-info">
+                    <h3>Snake Retro</h3>
+                    <span class="tag">Retro</span>
+                    <a href="./games/snake/" class="btn-play">Play</a>
+                </div>
+            </div>
+
+            <div class="game-card" data-category="action">
+                <div class="card-img" style="background-color: #444;"></div>
+                <div class="card-info">
+                    <h3>Cyber Runner</h3>
+                    <span class="tag">Action</span>
+                    <a href="./games/cyber-runner/" class="btn-play">Play</a>
+                </div>
+            </div>
+
+            <div class="game-card" data-category="puzzle">
+                <div class="card-img" style="background-color: #555;"></div>
+                <div class="card-info">
+                    <h3>Block Match</h3>
+                    <span class="tag">Puzzle</span>
+                    <a href="./games/blocks/" class="btn-play">Play</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Game Hub | <a href="https://github.com/yourusername">GitHub Profile</a></p>
+    </footer>
+
+    <script src="./script.js"></script>
+</body>
+</html>
