@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pong vs Bot</title>
+    <style>
+        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
+        canvas { border: 2px dashed #64748b; background: #1e293b; }
+        .score { font-size: 2rem; margin: 10px; color: #00f2ff; }
+        .back-btn { color: #64748b; text-decoration: none; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="score"><span id="p1">0</span> - <span id="p2">0</span></div>
+    <canvas id="pong" width="600" height="400"></canvas>
+    <a href="../../index.html" class="back-btn">← Back to Hub</a>
+
+    <script>
+        const canvas = document.getElementById('pong');
+        const ctx = canvas.getContext('2d');
+
+        const ball = { x: 300, y: 200, r: 8, dx: 4, dy: 4 };
+        const p1 = { x: 10, y: 150, w: 10, h: 80, score: 0 };
+        const bot = { x: 580, y: 150, w: 10, h: 80, score: 0 };
+
+        canvas.onmousemove = e => {
+            const rect = canvas.getBoundingClientRect();
+            p1.y = e.clientY - rect.top - p1.h/2;
+        };
+
+        function resetBall() {
+            ball.x = 300; ball.y = 200;
+            ball.dx *= -1;
+        }
+
+        function update() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Bot AI (with slight speed limit to be fair)
+            let botCenter = bot.y + bot.h/2;
+            if(botCenter < ball.y - 10) bot.y += 4;
+            else if(botCenter > ball.y + 10) bot.y -= 4;
+
+            // Wall Bounce
+            if(ball.y < 0 || ball.y > canvas.height) ball.dy *= -1;
+
+            // Paddle Collisions
+            if(ball.x < p1.x + p1.w && ball.y > p1.y && ball.y < p1.y + p1.h) ball.dx = 4;
+            if(ball.x > bot.x - ball.r && ball.y > bot.y && ball.y < bot.y + bot.h) ball.dx = -4;
+
+            // Scoring
+            if(ball.x < 0) { bot.score++; document.getElementById('p2').innerText = bot.score; resetBall(); }
+            if(ball.x > canvas.width) { p1.score++; document.getElementById('p1').innerText = p1.score; resetBall(); }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0,0,600,400);
+
+            ctx.fillStyle = '#00f2ff';
+            ctx.fillRect(p1.x, p1.y, p1.w, p1.h); // Player
+            ctx.fillStyle = '#ff006e';
+            ctx.fillRect(bot.x, bot.y, bot.w, bot.h); // Bot
+            
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+            ctx.fill();
+
+            update();
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+</body>
+</html>
