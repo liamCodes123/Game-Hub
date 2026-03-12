@@ -2,115 +2,94 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pong Multiplayer</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>Tic-Tac-Toe</title>
     <style>
         body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
-        #lobby { background: #1e293b; padding: 20px; border-radius: 8px; border: 2px solid #00f2ff; margin: 20px; text-align: center; }
-        input { padding: 8px; border-radius: 4px; border: none; margin: 10px; }
-        button { background: #00f2ff; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        canvas { border: 2px dashed #334155; background: #1e293b; display: none; }
-        .score { font-size: 2rem; color: #00f2ff; margin: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 100px); gap: 10px; margin-top: 20px; }
+        .cell { width: 100px; height: 100px; background: #1e293b; border: 2px solid #00f2ff; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; font-weight: bold; }
+        .cell.taken { cursor: not-allowed; }
+        .status { margin: 20px; font-size: 1.5rem; color: #00f2ff; }
+        .controls { margin-bottom: 10px; }
+        button { background: #00f2ff; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="lobby">
-        <h2>PONG MULTIPLAYER</h2>
-        <button onclick="createLobby()">Create Private Lobby</button>
-        <div style="margin: 20px 0;">-- OR --</div>
-        <input type="text" id="joinCode" placeholder="Enter 5-Letter Code">
-        <button onclick="joinLobby()">Join</button>
-        <p id="status">Status: Waiting for action...</p>
+    <div class="status" id="status">Your Turn (X)</div>
+    <div class="controls">
+        <button onclick="resetGame()">Reset</button>
+        <button id="modeBtn" onclick="toggleMode()">Mode: vs Bot</button>
     </div>
-
-    <div id="gameUI" style="display:none; text-align:center;">
-        <div class="score"><span id="p1">0</span> - <span id="p2">0</span></div>
-        <canvas id="pong" width="600" height="400"></canvas>
-        <p id="playerLabel"></p>
-        <a href="../../index.html" style="color:#64748b; text-decoration:none;">← Back to Hub</a>
-    </div>
+    <div class="grid" id="grid"></div>
+    <a href="../../index.html" style="color: #64748b; margin-top: 20px; text-decoration: none;">← Back</a>
 
     <script>
-        const canvas = document.getElementById('pong');
-        const ctx = canvas.getContext('2d');
-        const peer = new Peer(); 
-        let conn, isHost = false;
+        let board = ["","","","","","","","",""];
+        let isBotMode = true;
+        let gameActive = true;
+        const grid = document.getElementById('grid');
 
-        const ball = { x: 300, y: 200, r: 8, dx: 4, dy: 4 };
-        const p1 = { y: 150, h: 80, score: 0 }; // Left Player
-        const p2 = { y: 150, h: 80, score: 0 }; // Right Player (Guest)
-
-        canvas.onmousemove = e => {
-            const rect = canvas.getBoundingClientRect();
-            let newY = e.clientY - rect.top - 40;
-            if(isHost) p1.y = newY; else p2.y = newY;
-        };
-
-        function createLobby() {
-            const code = Math.random().toString(36).substring(2, 7).toUpperCase();
-            const hostPeer = new Peer(code);
-            hostPeer.on('open', id => {
-                document.getElementById('status').innerText = "CODE: " + id + " (Share this!)";
-                isHost = true;
+        function init() {
+            grid.innerHTML = '';
+            board.forEach((cell, i) => {
+                const div = document.createElement('div');
+                div.className = 'cell';
+                div.innerText = cell;
+                div.addEventListener('click', () => makeMove(i));
+                grid.appendChild(div);
             });
-            hostPeer.on('connection', c => { conn = c; setupGame(); });
         }
 
-        function joinLobby() {
-            const code = document.getElementById('joinCode').value.toUpperCase();
-            conn = peer.connect(code);
-            conn.on('open', () => { setupGame(); });
+        function toggleMode() {
+            isBotMode = !isBotMode;
+            document.getElementById('modeBtn').innerText = isBotMode ? "Mode: vs Bot" : "Mode: Local P2";
+            resetGame();
         }
 
-        function setupGame() {
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('gameUI').style.display = 'block';
-            canvas.style.display = 'block';
-            document.getElementById('playerLabel').innerText = isHost ? "You are LEFT side" : "You are RIGHT side";
-            
-            conn.on('data', data => {
-                if(isHost) {
-                    p2.y = data.p2Y; // Receive guest pos
-                } else {
-                    p1.y = data.p1Y; // Receive host pos
-                    ball.x = data.ballX; ball.y = data.ballY; // Receive ball pos
-                    document.getElementById('p1').innerText = data.s1;
-                    document.getElementById('p2').innerText = data.s2;
-                }
-            });
-            draw();
+        function makeMove(i) {
+            if (board[i] || !gameActive) return;
+            board[i] = "X";
+            update();
+            if (gameActive && isBotMode) setTimeout(botMove, 500);
         }
 
-        function update() {
-            if(!conn) return;
-
-            if(isHost) {
-                ball.x += ball.dx; ball.y += ball.dy;
-                if(ball.y < 0 || ball.y > 400) ball.dy *= -1;
-                if(ball.x < 20 && ball.y > p1.y && ball.y < p1.y + p1.h) ball.dx = 4;
-                if(ball.x > 570 && ball.y > p2.y && ball.y < p2.y + p2.h) ball.dx = -4;
-
-                if(ball.x < 0) { p2.score++; ball.x=300; ball.dx=4; }
-                if(ball.x > 600) { p1.score++; ball.x=300; ball.dx=-4; }
-                
-                document.getElementById('p1').innerText = p1.score;
-                document.getElementById('p2').innerText = p2.score;
-
-                conn.send({ p1Y: p1.y, ballX: ball.x, ballY: ball.y, s1: p1.score, s2: p2.score });
-            } else {
-                conn.send({ p2Y: p2.y });
+        function botMove() {
+            let emptyIndices = board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+            if (emptyIndices.length > 0 && gameActive) {
+                let random = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                board[random] = "O";
+                update();
             }
         }
 
-        function draw() {
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(0,0,600,400);
-            ctx.fillStyle = '#00f2ff'; ctx.fillRect(10, p1.y, 10, p1.h);
-            ctx.fillStyle = '#ff006e'; ctx.fillRect(580, p2.y, 10, p2.h);
-            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
-            update();
-            requestAnimationFrame(draw);
+        function update() {
+            init();
+            checkWinner();
         }
+
+        function checkWinner() {
+            const winPaths = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            for (let path of winPaths) {
+                const [a, b, c] = path;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    document.getElementById('status').innerText = board[a] + " Wins!";
+                    gameActive = false;
+                    return;
+                }
+            }
+            if (!board.includes("")) {
+                document.getElementById('status').innerText = "Draw!";
+                gameActive = false;
+            }
+        }
+
+        function resetGame() {
+            board = ["","","","","","","","",""];
+            gameActive = true;
+            document.getElementById('status').innerText = "Your Turn (X)";
+            init();
+        }
+
+        init();
     </script>
 </body>
 </html>
