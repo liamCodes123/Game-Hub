@@ -2,16 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Space Invaders</title>
+    <title>Space Invaders - Retro</title>
     <style>
-        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; overflow: hidden; }
-        canvas { 
-            border: 2px solid #00f2ff; 
-            background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
-        }
-        .ui { margin: 10px; font-size: 1.2rem; color: #00f2ff; }
-        .back-btn { color: #64748b; text-decoration: none; margin-top: 15px; font-size: 0.9rem; }
+        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        canvas { border: 4px solid #00f2ff; background: #1e293b; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); cursor: crosshair; }
+        .ui { margin: 10px; font-size: 1.5rem; color: #00f2ff; text-shadow: 2px 2px #000; }
+        .back-btn { color: #64748b; text-decoration: none; margin-top: 15px; border: 1px solid #334155; padding: 5px 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -25,18 +21,18 @@
         const scoreEl = document.getElementById('score');
 
         let score = 0;
-        const player = { x: 285, y: 370, w: 30, h: 20, speed: 5 };
-        const bullets = [];
-        const enemies = [];
-        const enemyRows = 3;
-        const enemyCols = 8;
+        let gameActive = true;
+        const player = { x: 285, y: 370, w: 30, h: 20, speed: 6 };
+        let bullets = [];
+        let enemies = [];
         let enemyDirection = 1;
-        let enemyTimer = 0;
 
-        // Initialize Enemies
-        for(let r=0; r<enemyRows; r++) {
-            for(let c=0; c<enemyCols; c++) {
-                enemies.push({ x: c * 60 + 50, y: r * 40 + 50, w: 30, h: 20 });
+        function initEnemies() {
+            enemies = [];
+            for(let r=0; r<3; r++) {
+                for(let c=0; c<8; c++) {
+                    enemies.push({ x: c * 60 + 50, y: r * 40 + 50, w: 30, h: 20 });
+                }
             }
         }
 
@@ -45,21 +41,23 @@
         window.onkeyup = e => keys[e.key] = false;
 
         function update() {
+            if (!gameActive) return;
+
             if(keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
             if(keys['ArrowRight'] && player.x < canvas.width - player.w) player.x += player.speed;
             if(keys[' ']) {
-                if(bullets.length < 3) bullets.push({x: player.x + 13, y: player.y, w: 4, h: 10});
-                keys[' '] = false; // Prevent rapid fire
+                if(bullets.length < 5) bullets.push({x: player.x + 13, y: player.y, w: 4, h: 10});
+                keys[' '] = false;
             }
 
             bullets.forEach((b, i) => {
-                b.y -= 7;
+                b.y -= 8;
                 if(b.y < 0) bullets.splice(i, 1);
             });
 
             let changeDir = false;
             enemies.forEach(en => {
-                en.x += enemyDirection * 1;
+                en.x += enemyDirection * 1.5;
                 if(en.x > canvas.width - en.w || en.x < 0) changeDir = true;
 
                 bullets.forEach((b, bi) => {
@@ -74,28 +72,49 @@
 
             if(changeDir) {
                 enemyDirection *= -1;
-                enemies.forEach(en => en.y += 10);
+                enemies.forEach(en => en.y += 15);
             }
+
+            if(enemies.length === 0) gameActive = false;
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Player
             ctx.fillStyle = '#00f2ff';
             ctx.fillRect(player.x, player.y, player.w, player.h);
 
-            // Bullets
             ctx.fillStyle = '#fff';
             bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
 
-            // Enemies
             ctx.fillStyle = '#ff006e';
             enemies.forEach(en => ctx.fillRect(en.x, en.y, en.w, en.h));
+
+            if(!gameActive) {
+                ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+                ctx.fillRect(0,0,canvas.width, canvas.height);
+                ctx.fillStyle = "#00f2ff";
+                ctx.textAlign = "center";
+                ctx.font = "30px Courier New";
+                ctx.fillText("MISSION COMPLETE", 300, 180);
+                ctx.font = "18px Courier New";
+                ctx.fillText("CLICK TO RESTART", 300, 220);
+            }
 
             update();
             requestAnimationFrame(draw);
         }
+
+        canvas.addEventListener('click', () => {
+            if(!gameActive) {
+                score = 0;
+                scoreEl.innerText = score;
+                initEnemies();
+                gameActive = true;
+            }
+        });
+
+        initEnemies();
         draw();
     </script>
 </body>
