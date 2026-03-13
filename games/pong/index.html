@@ -8,13 +8,13 @@
         :root { --neon: #00f2ff; --pink: #ff006e; }
         body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
         .box { background: #1e293b; padding: 25px; border: 2px solid var(--neon); border-radius: 12px; width: 350px; text-align: center; margin-top: 50px; }
-        button { background: var(--neon); border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 10px 0; width: 100%; transition: 0.2s; }
-        button:disabled { background: #475569; cursor: not-allowed; }
-        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; background: #0f172a; color: white; }
+        button { background: var(--neon); border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 10px 0; width: 100%; transition: 0.2s; color: #0f172a; }
+        button:disabled { background: #475569; cursor: not-allowed; color: #94a3b8; }
+        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; background: #0f172a; color: white; border: 1px solid #334155; }
         canvas { border: 4px solid var(--neon); background: #000; display: none; margin-top: 20px; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
         .player-count { font-size: 1.2rem; color: var(--neon); margin: 10px 0; }
-        #lobbyList { text-align: left; margin-top: 20px; border-top: 1px solid #334155; padding-top: 10px; }
-        .lobby-item { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px; background: #0f172a; padding: 5px 10px; border-radius: 4px; }
+        #status { font-size: 0.8rem; color: #94a3b8; margin-top: 10px; }
+        #scoreBoard { font-size: 2.5rem; color: var(--neon); margin: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -31,7 +31,7 @@
             <button onclick="joinLobby(document.getElementById('manualCode').value.toUpperCase())">Join via Code</button>
         </div>
 
-        <p id="status">Waiting for input...</p>
+        <p id="status">Peer Status: Disconnected</p>
     </div>
 
     <div id="waitingRoom" class="box" style="display:none">
@@ -51,19 +51,41 @@
     <script>
         const canvas = document.getElementById('pong');
         const ctx = canvas.getContext('2d');
+        const statusText = document.getElementById('status');
+        
+        // CRITICAL: ICE Servers allow cross-network connections
+        const peerConfig = {
+            config: {
+                'iceServers': [
+                    { url: 'stun:stun.l.google.com:19302' },
+                    { url: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
+        };
+
         let peer, conn, isHost = false, gameStarted = false;
         
-        const ball = { x: 300, y: 200, dx: 4, dy: 4 };
-        const p1 = { y: 160, h: 80, score: 0 };
-        const p2 = { y: 160, h: 80, score: 0 };
+        const ball = { x: 300, y: 200, dx: 5, dy: 5 };
+        const p1 = { y: 160, h: 80, score: 0 }; // Left
+        const p2 = { y: 160, h: 80, score: 0 }; // Right
+
+        // Initialize Peer on load
+        peer = new Peer(null, peerConfig);
+        peer.on('open', (id) => { statusText.innerText = "Peer ID: " + id; });
+        peer.on('error', (err) => { statusText.innerText = "Error: " + err.type; });
 
         function createLobby() {
             const id = "PONG-" + Math.random().toString(36).substring(2, 7).toUpperCase();
-            peer = new Peer(id);
+            // Re-initialize Peer as the specific Room ID
+            peer.destroy();
+            peer = new Peer(id, peerConfig);
+            
             peer.on('open', () => {
                 isHost = true;
                 showWaitingRoom(id);
+                statusText.innerText = "Hosting Room: " + id;
             });
+
             peer.on('connection', c => {
                 conn = c;
                 setupConnection();
@@ -72,11 +94,9 @@
 
         function joinLobby(code) {
             if(!code) return;
-            peer = new Peer();
-            peer.on('open', () => {
-                conn = peer.connect(code);
-                setupConnection();
-            });
+            statusText.innerText = "Attempting to join " + code + "...";
+            conn = peer.connect(code);
+            setupConnection();
         }
 
         function showWaitingRoom(id) {
@@ -88,7 +108,7 @@
         function setupConnection() {
             conn.on('open', () => {
                 document.getElementById('pCount').innerText = "Players: 2/2";
-                document.getElementById('pCount').style.color = "#4ade80"; // Green
+                document.getElementById('pCount').style.color = "#4ade80";
                 
                 if(isHost) {
                     document.getElementById('startBtn').disabled = false;
@@ -97,7 +117,8 @@
                     document.getElementById('setupView').style.display = 'none';
                     document.getElementById('waitingRoom').style.display = 'block';
                     document.getElementById('startBtn').style.display = 'none';
-                    document.getElementById('waitMsg').innerText = "Connected! Waiting for host to start...";
+                    document.getElementById('waitMsg').innerText = "Connected! Waiting for host...";
+                    document.getElementById('displayCode').innerText = "Room Joined";
                 }
             });
 
@@ -106,10 +127,15 @@
                 if(isHost) {
                     p2.y = data.p2Y;
                 } else {
-                    p1.y = data.p1Y; ball.x = data.ballX; ball.y = data.ballY;
-                    p1.score = data.s1; p2.score = data.s2;
+                    p1.y = data.p1Y; 
+                    ball.x = data.ballX; 
+                    ball.y = data.ballY;
+                    p1.score = data.s1; 
+                    p2.score = data.s2;
                 }
             });
+
+            conn.on('close', () => { alert("Connection lost"); location.reload(); });
         }
 
         function sendStart() {
@@ -122,35 +148,46 @@
         function beginPlay() {
             document.getElementById('waitingRoom').style.display = 'none';
             document.getElementById('gameView').style.display = 'block';
+            document.getElementById('scoreBoard').style.display = 'block';
             canvas.style.display = 'block';
             gameStarted = true;
             
-            canvas.onmousemove = e => {
+            window.addEventListener('mousemove', e => {
                 const rect = canvas.getBoundingClientRect();
                 const mouseTop = e.clientY - rect.top - 40;
                 if(isHost) p1.y = mouseTop; else p2.y = mouseTop;
-            };
+            });
             requestAnimationFrame(gameLoop);
         }
 
         function gameLoop() {
             if(!gameStarted) return;
             ctx.fillStyle = "black"; ctx.fillRect(0,0,600,400);
+            
+            // Draw Paddles
             ctx.fillStyle = "#00f2ff"; ctx.fillRect(10, p1.y, 10, p1.h);
             ctx.fillStyle = "#ff006e"; ctx.fillRect(580, p2.y, 10, p2.h);
+            
+            // Draw Ball
             ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(ball.x, ball.y, 8, 0, Math.PI*2); ctx.fill();
 
             if(isHost) {
                 ball.x += ball.dx; ball.y += ball.dy;
                 if(ball.y < 10 || ball.y > 390) ball.dy *= -1;
-                if(ball.x < 25 && ball.y > p1.y && ball.y < p1.y+p1.h) ball.dx = 4;
-                if(ball.x > 575 && ball.y > p2.y && ball.y < p2.y+p2.h) ball.dx = -4;
-                if(ball.x < 0) { p2.score++; ball.x=300; ball.dx=4; }
-                if(ball.x > 600) { p1.score++; ball.x=300; ball.dx=-4; }
+                
+                // Collisions
+                if(ball.x < 25 && ball.y > p1.y && ball.y < p1.y+p1.h) ball.dx = 5;
+                if(ball.x > 575 && ball.y > p2.y && ball.y < p2.y+p2.h) ball.dx = -5;
+                
+                // Score
+                if(ball.x < 0) { p2.score++; ball.x=300; ball.dx=5; }
+                if(ball.x > 600) { p1.score++; ball.x=300; ball.dx=-5; }
+                
                 conn.send({ p1Y: p1.y, ballX: ball.x, ballY: ball.y, s1: p1.score, s2: p2.score });
             } else {
                 conn.send({ p2Y: p2.y });
             }
+            
             document.getElementById('scoreBoard').innerText = `${p1.score} - ${p2.score}`;
             requestAnimationFrame(gameLoop);
         }
