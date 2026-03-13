@@ -2,80 +2,139 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Multiplayer Pong</title>
+    <title>Multiplayer Pong - Pro Lobbies</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-        #lobby { background: #1e293b; padding: 30px; border: 2px solid #00f2ff; text-align: center; margin-top: 50px; border-radius: 10px; }
-        input { padding: 10px; border-radius: 5px; border: none; }
-        button { background: #00f2ff; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; }
-        canvas { border: 2px dashed #00f2ff; background: #000; display: none; margin-top: 20px; }
-        .back { margin-top: 20px; color: #64748b; text-decoration: none; }
+        :root { --neon: #00f2ff; --pink: #ff006e; }
+        body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .box { background: #1e293b; padding: 25px; border: 2px solid var(--neon); border-radius: 12px; width: 350px; text-align: center; margin-top: 50px; }
+        button { background: var(--neon); border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 10px 0; width: 100%; transition: 0.2s; }
+        button:disabled { background: #475569; cursor: not-allowed; }
+        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; background: #0f172a; color: white; }
+        canvas { border: 4px solid var(--neon); background: #000; display: none; margin-top: 20px; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
+        .player-count { font-size: 1.2rem; color: var(--neon); margin: 10px 0; }
+        #lobbyList { text-align: left; margin-top: 20px; border-top: 1px solid #334155; padding-top: 10px; }
+        .lobby-item { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px; background: #0f172a; padding: 5px 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
-    <div id="lobby">
-        <h2>PONG LOBBY</h2>
-        <button onclick="createLobby()">Host New Game</button>
-        <p>OR</p>
-        <input type="text" id="joinCode" placeholder="Enter Code">
-        <button onclick="joinLobby()">Join Game</button>
-        <p id="status">Ready...</p>
+
+    <div id="setupView" class="box">
+        <h2 style="color: var(--neon)">ARCADE PONG</h2>
+        
+        <div id="hostControls">
+            <button onclick="createLobby()">Host New Game</button>
+        </div>
+
+        <div id="joinControls">
+            <input type="text" id="manualCode" placeholder="Enter Code Manually">
+            <button onclick="joinLobby(document.getElementById('manualCode').value.toUpperCase())">Join via Code</button>
+        </div>
+
+        <p id="status">Waiting for input...</p>
     </div>
 
-    <div id="gameArea" style="display:none; text-align:center;">
-        <h2 id="score">0 - 0</h2>
-        <canvas id="pong" width="600" height="400"></canvas>
-        <p id="role"></p>
+    <div id="waitingRoom" class="box" style="display:none">
+        <h3 id="displayCode">CODE: ---</h3>
+        <div class="player-count" id="pCount">Players: 1/2</div>
+        <button id="startBtn" onclick="sendStart()" disabled>START GAME</button>
+        <p id="waitMsg">Waiting for Guest to join...</p>
     </div>
-    <a href="../../index.html" class="back">← Back to Hub</a>
+
+    <div id="gameView" style="display:none; text-align:center;">
+        <h2 id="scoreBoard">0 - 0</h2>
+        <canvas id="pong" width="600" height="400"></canvas>
+    </div>
+
+    <a href="../../index.html" style="color: #64748b; text-decoration: none; margin-top: 20px;">← Back to Hub</a>
 
     <script>
         const canvas = document.getElementById('pong');
         const ctx = canvas.getContext('2d');
-        let peer = new Peer(); 
-        let conn, isHost = false;
-
+        let peer, conn, isHost = false, gameStarted = false;
+        
         const ball = { x: 300, y: 200, dx: 4, dy: 4 };
         const p1 = { y: 160, h: 80, score: 0 };
         const p2 = { y: 160, h: 80, score: 0 };
 
         function createLobby() {
-            const id = "HUB-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+            const id = "PONG-" + Math.random().toString(36).substring(2, 7).toUpperCase();
             peer = new Peer(id);
             peer.on('open', () => {
-                document.getElementById('status').innerHTML = `Code: <b style="color:#00f2ff">${id}</b> (Share this)`;
                 isHost = true;
+                showWaitingRoom(id);
             });
-            peer.on('connection', c => { conn = c; initNetwork(); });
+            peer.on('connection', c => {
+                conn = c;
+                setupConnection();
+            });
         }
 
-        function joinLobby() {
-            const code = document.getElementById('joinCode').value.toUpperCase();
-            conn = peer.connect(code);
-            conn.on('open', () => { initNetwork(); });
+        function joinLobby(code) {
+            if(!code) return;
+            peer = new Peer();
+            peer.on('open', () => {
+                conn = peer.connect(code);
+                setupConnection();
+            });
         }
 
-        function initNetwork() {
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
+        function showWaitingRoom(id) {
+            document.getElementById('setupView').style.display = 'none';
+            document.getElementById('waitingRoom').style.display = 'block';
+            document.getElementById('displayCode').innerText = "LOBBY: " + id;
+        }
+
+        function setupConnection() {
+            conn.on('open', () => {
+                document.getElementById('pCount').innerText = "Players: 2/2";
+                document.getElementById('pCount').style.color = "#4ade80"; // Green
+                
+                if(isHost) {
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('waitMsg').innerText = "Guest Connected! Press Start.";
+                } else {
+                    document.getElementById('setupView').style.display = 'none';
+                    document.getElementById('waitingRoom').style.display = 'block';
+                    document.getElementById('startBtn').style.display = 'none';
+                    document.getElementById('waitMsg').innerText = "Connected! Waiting for host to start...";
+                }
+            });
+
+            conn.on('data', data => {
+                if(data.type === "START") beginPlay();
+                if(isHost) {
+                    p2.y = data.p2Y;
+                } else {
+                    p1.y = data.p1Y; ball.x = data.ballX; ball.y = data.ballY;
+                    p1.score = data.s1; p2.score = data.s2;
+                }
+            });
+        }
+
+        function sendStart() {
+            if(isHost && conn) {
+                conn.send({ type: "START" });
+                beginPlay();
+            }
+        }
+
+        function beginPlay() {
+            document.getElementById('waitingRoom').style.display = 'none';
+            document.getElementById('gameView').style.display = 'block';
             canvas.style.display = 'block';
-            document.getElementById('role').innerText = isHost ? "You: Left Paddle" : "You: Right Paddle";
+            gameStarted = true;
             
             canvas.onmousemove = e => {
                 const rect = canvas.getBoundingClientRect();
-                if(isHost) p1.y = e.clientY - rect.top - 40;
-                else p2.y = e.clientY - rect.top - 40;
+                const mouseTop = e.clientY - rect.top - 40;
+                if(isHost) p1.y = mouseTop; else p2.y = mouseTop;
             };
-
-            conn.on('data', data => {
-                if(isHost) p2.y = data.p2Y;
-                else { p1.y = data.p1Y; ball.x = data.ballX; ball.y = data.ballY; p1.score = data.s1; p2.score = data.s2; }
-            });
-            gameLoop();
+            requestAnimationFrame(gameLoop);
         }
 
         function gameLoop() {
+            if(!gameStarted) return;
             ctx.fillStyle = "black"; ctx.fillRect(0,0,600,400);
             ctx.fillStyle = "#00f2ff"; ctx.fillRect(10, p1.y, 10, p1.h);
             ctx.fillStyle = "#ff006e"; ctx.fillRect(580, p2.y, 10, p2.h);
@@ -83,16 +142,16 @@
 
             if(isHost) {
                 ball.x += ball.dx; ball.y += ball.dy;
-                if(ball.y < 0 || ball.y > 400) ball.dy *= -1;
-                if(ball.x < 20 && ball.y > p1.y && ball.y < p1.y+p1.h) ball.dx = 4;
-                if(ball.x > 570 && ball.y > p2.y && ball.y < p2.y+p2.h) ball.dx = -4;
-                if(ball.x < 0) { p2.score++; ball.x=300; }
-                if(ball.x > 600) { p1.score++; ball.x=300; }
+                if(ball.y < 10 || ball.y > 390) ball.dy *= -1;
+                if(ball.x < 25 && ball.y > p1.y && ball.y < p1.y+p1.h) ball.dx = 4;
+                if(ball.x > 575 && ball.y > p2.y && ball.y < p2.y+p2.h) ball.dx = -4;
+                if(ball.x < 0) { p2.score++; ball.x=300; ball.dx=4; }
+                if(ball.x > 600) { p1.score++; ball.x=300; ball.dx=-4; }
                 conn.send({ p1Y: p1.y, ballX: ball.x, ballY: ball.y, s1: p1.score, s2: p2.score });
             } else {
                 conn.send({ p2Y: p2.y });
             }
-            document.getElementById('score').innerText = `${p1.score} - ${p2.score}`;
+            document.getElementById('scoreBoard').innerText = `${p1.score} - ${p2.score}`;
             requestAnimationFrame(gameLoop);
         }
     </script>
