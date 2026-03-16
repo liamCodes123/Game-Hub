@@ -2,78 +2,80 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcade Hub</title>
-    <link rel="stylesheet" href="./style.css">
+    <title>Arcade Hub + Global Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
-        <div class="logo">ARCADE<span>HUB</span></div>
+        <div class="logo">NEON<span>ARCADE</span></div>
         <input type="text" id="gameSearch" placeholder="Search games...">
     </nav>
 
     <header class="hero">
-        <div class="hero-content">
-            <h1>Web Arcade</h1>
-            <p>Multiplayer Games & Retro Classics</p>
-        </div>
+        <h1>UNBEATABLE ARCADE</h1>
+        <p>Global multiplayer, smarter bots, zero lag.</p>
     </header>
 
-    <main class="container">
-        <div class="filter-bar">
-            <button class="filter-btn active" data-filter="all">All Games</button>
-            <button class="filter-btn" data-filter="multi">Multiplayer</button>
-            <button class="filter-btn" data-filter="solo">Single Player</button>
-        </div>
-
-        <section class="game-grid" id="gameGrid">
-            <div class="game-card" data-category="multi">
-                <div class="card-img">🏓</div>
-                <div class="card-info">
-                    <h3>Pong Multiplayer</h3>
-                    <span class="tag">Online Lobby</span>
-                    <a href="./games/pong/index.html" class="btn-play">Play Now</a>
-                </div>
+    <div class="main-layout">
+        <main class="container">
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="multi">Multiplayer</button>
+                <button class="filter-btn" data-filter="puzzle">Puzzle</button>
             </div>
 
-            <div class="game-card" data-category="solo">
-                <div class="card-img">👾</div>
-                <div class="card-info">
-                    <h3>Space Invaders</h3>
-                    <span class="tag">Classic</span>
-                    <a href="./games/space-invaders/index.html" class="btn-play">Play Now</a>
+            <div class="game-grid" id="gameGrid">
+                <div class="game-card" data-category="puzzle">
+                    <div class="card-img">⭕</div>
+                    <div class="card-info">
+                        <span class="tag">Unbeatable AI</span>
+                        <h3>Tic-Tac-Toe</h3>
+                        <a href="games/tictactoe/index.html" class="btn-play">Play Now</a>
+                    </div>
+                </div>
+
+                <div class="game-card" data-category="multi">
+                    <div class="card-img">🏓</div>
+                    <div class="card-info">
+                        <span class="tag">P2P Multi</span>
+                        <h3>Neon Pong</h3>
+                        <a href="games/pong/index.html" class="btn-play">Play Now</a>
+                    </div>
+                </div>
+
+                <div class="game-card" data-category="puzzle">
+                    <div class="card-img">💣</div>
+                    <div class="card-info">
+                        <span class="tag">Retro</span>
+                        <h3>Minesweeper</h3>
+                        <a href="games/minesweeper/index.html" class="btn-play">Play Now</a>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-category="all">
+                    <div class="card-img">🐦</div>
+                    <div class="card-info">
+                        <span class="tag">Highscore</span>
+                        <h3>Neon Flappy</h3>
+                        <a href="games/flappy/index.html" class="btn-play">Play Now</a>
+                    </div>
                 </div>
             </div>
+        </main>
 
-            <div class="game-card" data-category="multi">
-                <div class="card-img">⭕</div>
-                <div class="card-info">
-                    <h3>Tic-Tac-Toe</h3>
-                    <span class="tag">Bot / Friend</span>
-                    <a href="./games/tictactoe/index.html" class="btn-play">Play Now</a>
-                </div>
+        <aside class="chat-container">
+            <div class="chat-header">Global Lobby Chat</div>
+            <div id="chat-messages">
+                <div class="msg">Connecting to global lobby...</div>
             </div>
-
-            <div class="game-card" data-category="solo">
-                <div class="card-img">🧱</div>
-                <div class="card-info">
-                    <h3>Breakout</h3>
-                    <span class="tag">Action</span>
-                    <a href="./games/breakout/index.html" class="btn-play">Play Now</a>
-                </div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Say hello...">
+                <button id="sendChat">Send</button>
             </div>
+        </aside>
+    </div>
 
-            <div class="game-card" data-category="solo">
-                <div class="card-img">🐍</div>
-                <div class="card-info">
-                    <h3>Snake Retro</h3>
-                    <span class="tag">Retro</span>
-                    <a href="./games/snake/index.html" class="btn-play">Play Now</a>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <script src="./script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
