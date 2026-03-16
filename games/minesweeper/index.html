@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Minesweeper</title>
+    <style>
+        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
+        .grid { display: grid; grid-template-columns: repeat(10, 30px); gap: 2px; background: #1e293b; padding: 5px; border: 2px solid #00f2ff; }
+        .cell { width: 30px; height: 30px; background: #0f172a; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+        .cell.revealed { background: #1e293b; cursor: default; }
+        .cell.mine { background: #ff006e; }
+    </style>
+</head>
+<body>
+    <h2>MINESWEEPER</h2>
+    <div class="grid" id="grid"></div>
+    <a href="../../index.html" style="color: #64748b; margin-top: 20px; text-decoration: none;">← Back</a>
+
+    <script>
+        const size = 10, minesCount = 15, grid = document.getElementById('grid'), cells = [];
+        let board = Array(size * size).fill(0);
+
+        // Place mines
+        let placed = 0;
+        while(placed < minesCount) {
+            let idx = Math.floor(Math.random() * 100);
+            if(board[idx] !== 'M') { board[idx] = 'M'; placed++; }
+        }
+
+        function init() {
+            board.forEach((val, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.onclick = () => reveal(i);
+                cell.oncontextmenu = (e) => { e.preventDefault(); cell.innerText = cell.innerText === '🚩' ? '' : '🚩'; };
+                grid.appendChild(cell);
+                cells.push(cell);
+            });
+        }
+
+        function reveal(i) {
+            if(board[i] === 'M') { alert('BOOM!'); location.reload(); }
+            else {
+                let count = 0;
+                const neighbors = [i-11, i-10, i-9, i-1, i+1, i+9, i+10, i+11];
+                neighbors.forEach(n => { if(n >= 0 && n < 100 && board[n] === 'M') count++; });
+                cells[i].innerText = count || '';
+                cells[i].classList.add('revealed');
+                cells[i].style.color = "#00f2ff";
+            }
+        }
+        init();
+    </script>
+</body>
+</html>
