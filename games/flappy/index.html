@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Flappy</title>
+    <style>
+        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; overflow: hidden; }
+        canvas { border: 4px solid #00f2ff; background: #000; margin-top: 20px; }
+        .score { font-size: 2rem; color: #00f2ff; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="score" id="score">0</div>
+    <canvas id="flappy" width="320" height="480"></canvas>
+    <a href="../../index.html" style="color: #64748b; margin-top: 20px; text-decoration: none;">← Back</a>
+
+    <script>
+        const canvas = document.getElementById('flappy');
+        const ctx = canvas.getContext('2d');
+        let bird = { x: 50, y: 150, w: 20, h: 20, gravity: 0.6, lift: -10, velocity: 0 };
+        let pipes = [];
+        let frame = 0;
+        let score = 0;
+
+        function drawBird() {
+            ctx.fillStyle = "#ff006e";
+            ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
+        }
+
+        function update() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+            if (bird.y > canvas.height) location.reload();
+            if (frame % 100 === 0) pipes.push({ x: canvas.width, top: Math.random() * (canvas.height/2), w: 40 });
+            
+            pipes.forEach((p, i) => {
+                p.x -= 2;
+                if (p.x + p.w < 0) { pipes.splice(i, 1); score++; document.getElementById('score').innerText = score; }
+                // Collision
+                if (bird.x < p.x + p.w && bird.x + bird.w > p.x && (bird.y < p.top || bird.y + bird.h > p.top + 100)) location.reload();
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBird();
+            ctx.fillStyle = "#00f2ff";
+            pipes.forEach(p => {
+                ctx.fillRect(p.x, 0, p.w, p.top);
+                ctx.fillRect(p.x, p.top + 100, p.w, canvas.height);
+            });
+            update();
+            frame++;
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('keydown', (e) => { if(e.code === 'Space') bird.velocity = bird.lift; });
+        canvas.addEventListener('mousedown', () => bird.velocity = bird.lift);
+        draw();
+    </script>
+</body>
+</html>
