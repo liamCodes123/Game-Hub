@@ -1,83 +1,106 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- FILTER LOGIC ---
-    const search = document.getElementById('gameSearch');
-    const cards = document.querySelectorAll('.game-card');
-    const filters = document.querySelectorAll('.filter-btn');
+    
+    // 1. CHAT TOGGLE LOGIC
+    const chatBox = document.getElementById('chatBox');
+    const chatToggle = document.getElementById('chatToggle');
+    
+    window.toggleChat = () => {
+        chatBox.classList.toggle('hidden');
+    };
 
-    search.addEventListener('input', () => {
-        const val = search.value.toLowerCase();
-        cards.forEach(card => {
+    chatToggle.addEventListener('click', toggleChat);
+
+    // 2. SEARCH & FILTER LOGIC
+    const searchInput = document.getElementById('gameSearch');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const gameCards = document.querySelectorAll('.game-card');
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        gameCards.forEach(card => {
             const title = card.querySelector('h3').innerText.toLowerCase();
-            card.style.display = title.includes(val) ? 'block' : 'none';
+            card.style.display = title.includes(query) ? 'block' : 'none';
         });
     });
 
-    filters.forEach(btn => {
+    filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            filters.forEach(b => b.classList.remove('active'));
+            filterBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            const f = btn.dataset.filter;
-            cards.forEach(c => c.style.display = (f === 'all' || c.dataset.category === f) ? 'block' : 'none');
+            const category = btn.dataset.filter;
+            gameCards.forEach(card => {
+                if(category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         });
     });
 
-    // --- GLOBAL CHAT LOGIC (PEERJS) ---
+    // 3. PEERJS GLOBAL CHAT LOGIC
     const chatMsgs = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendChat');
     
-    // Using a fixed ID for the "Lobby Server"
-    const LOBBY_ID = 'ARCADE-GLOBAL-LOBBY-2026'; 
-    let peer = new Peer();
+    // Using a static lobby ID. First person in becomes host.
+    const LOBBY_ID = 'NEON-ARCADE-LOBBY-XYZ'; 
+    const peer = new Peer();
     let connections = [];
 
-    // Try to become the host, or join the host
     peer.on('open', (myId) => {
+        // Attempt to connect to the Global Lobby Host
         const conn = peer.connect(LOBBY_ID);
-        setupChatConnection(conn);
-        
-        // If this fails, it means we might need to be the host
+        setupConnection(conn);
+
+        // If we can't connect, it likely means we need to be the Host
         peer.on('error', (err) => {
-            if (err.type === 'unavailable-id') {
-                // Someone is already the host, we are fine
-            } else {
-                // We become the host
+            if (err.type === 'peer-unavailable') {
                 startHost();
             }
         });
     });
 
     function startHost() {
-        const hostPeer = new Peer(LOBBY_ID);
-        hostPeer.on('connection', (c) => {
+        const host = new Peer(LOBBY_ID);
+        host.on('connection', (c) => {
             connections.push(c);
             c.on('data', (data) => {
-                // Broadcast to everyone else
+                // Relay messages to all connected players
+                broadcast(data);
                 addMessage(data.user, data.msg);
-                connections.forEach(other => other.send(data));
             });
         });
     }
 
-    function setupChatConnection(c) {
+    function setupConnection(c) {
         c.on('open', () => {
-            addMessage("System", "Connected to Global Chat!");
+            addMessage("System", "Joined the global lobby!");
             sendBtn.onclick = () => {
-                const msg = chatInput.value;
-                if(!msg) return;
-                const data = { user: "Player-" + peer.id.substring(0,4), msg: msg };
+                const text = chatInput.value;
+                if(!text) return;
+                const data = { user: "Player-" + peer.id.substring(0,4), msg: text };
                 c.send(data);
-                addMessage("You", msg);
+                addMessage("You", text);
                 chatInput.value = "";
             };
         });
-        c.on('data', (data) => addMessage(data.user, data.msg));
+
+        c.on('data', (data) => {
+            addMessage(data.user, data.msg);
+        });
+    }
+
+    function broadcast(data) {
+        connections.forEach(c => {
+            if (c.open) c.send(data);
+        });
     }
 
     function addMessage(user, msg) {
         const div = document.createElement('div');
         div.className = 'msg';
-        div.innerHTML = `<b>${user}:</b> ${msg}`;
+        div.innerHTML = `<strong>${user}:</strong> ${msg}`;
         chatMsgs.appendChild(div);
         chatMsgs.scrollTop = chatMsgs.scrollHeight;
     }
