@@ -23,73 +23,88 @@
     <a href="../../index.html" style="color: #64748b; margin-top: 20px; text-decoration: none;">← Back</a>
 
     <script>
-        let board = ["","","","","","","","",""];
-        let isBotMode = true;
-        let gameActive = true;
-        const grid = document.getElementById('grid');
+       
+let board = Array(9).fill("");
+let isBot = true, active = true, turn = "X";
 
-        function init() {
-            grid.innerHTML = '';
-            board.forEach((cell, i) => {
-                const div = document.createElement('div');
-                div.className = 'cell';
-                div.innerText = cell;
-                div.addEventListener('click', () => makeMove(i));
-                grid.appendChild(div);
-            });
-        }
+function move(i) {
+    if(!active || board[i]) return;
+    board[i] = turn;
+    if(check()) return;
+    turn = "O";
+    draw();
+    if(isBot) setTimeout(botMove, 300);
+}
 
-        function toggleMode() {
-            isBotMode = !isBotMode;
-            document.getElementById('modeBtn').innerText = isBotMode ? "Mode: vs Bot" : "Mode: Local P2";
-            resetGame();
-        }
-
-        function makeMove(i) {
-            if (board[i] || !gameActive) return;
-            board[i] = "X";
-            update();
-            if (gameActive && isBotMode) setTimeout(botMove, 500);
-        }
-
-        function botMove() {
-            let emptyIndices = board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
-            if (emptyIndices.length > 0 && gameActive) {
-                let random = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-                board[random] = "O";
-                update();
+function botMove() {
+    if (!active) return;
+    let bestScore = -Infinity;
+    let move;
+    for (let i = 0; i < 9; i++) {
+        if (board[i] === "") {
+            board[i] = "O";
+            let score = minimax(board, 0, false);
+            board[i] = "";
+            if (score > bestScore) {
+                bestScore = score;
+                move = i;
             }
         }
+    }
+    board[move] = "O";
+    if(!check()) { turn = "X"; document.getElementById('status').innerText = "Turn: X"; }
+    draw();
+}
 
-        function update() {
-            init();
-            checkWinner();
-        }
+const scores = { X: -10, O: 10, tie: 0 };
 
-        function checkWinner() {
-            const winPaths = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-            for (let path of winPaths) {
-                const [a, b, c] = path;
-                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                    document.getElementById('status').innerText = board[a] + " Wins!";
-                    gameActive = false;
-                    return;
-                }
+function minimax(board, depth, isMaximizing) {
+    let result = getWinner();
+    if (result !== null) return scores[result];
+
+    if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < 9; i++) {
+            if (board[i] === "") {
+                board[i] = "O";
+                let score = minimax(board, depth + 1, false);
+                board[i] = "";
+                bestScore = Math.max(score, bestScore);
             }
-            if (!board.includes("")) {
-                document.getElementById('status').innerText = "Draw!";
-                gameActive = false;
+        }
+        return bestScore;
+    } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < 9; i++) {
+            if (board[i] === "") {
+                board[i] = "X";
+                let score = minimax(board, depth + 1, true);
+                board[i] = "";
+                bestScore = Math.min(score, bestScore);
             }
         }
+        return bestScore;
+    }
+}
 
-        function resetGame() {
-            board = ["","","","","","","","",""];
-            gameActive = true;
-            document.getElementById('status').innerText = "Your Turn (X)";
-            init();
-        }
+function getWinner() {
+    const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for(let w of wins) {
+        if(board[w[0]] && board[w[0]]==board[w[1]] && board[w[0]]==board[w[2]]) return board[w[0]];
+    }
+    return board.includes("") ? null : "tie";
+}
 
-        init();
+function check() {
+    let result = getWinner();
+    if (result) {
+        active = false;
+        document.getElementById('status').innerText = result === "tie" ? "Draw!" : result + " Wins!";
+        draw();
+        return true;
+    }
+    return false;
+}
     </script>
 </body>
 </html>
