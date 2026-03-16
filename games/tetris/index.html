@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Block Fall</title>
+    <style>
+        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
+        canvas { border: 4px solid #4ade80; background: #000; }
+    </style>
+</head>
+<body>
+    <h2>BLOCK FALL</h2>
+    <canvas id="tetris" width="240" height="400"></canvas>
+    <a href="../../index.html" style="color: #64748b; margin-top: 20px; text-decoration: none;">← Back</a>
+
+    <script>
+        const canvas = document.getElementById('tetris');
+        const context = canvas.getContext('2d');
+        context.scale(20, 20);
+
+        function createPiece() {
+            return [[0, 1, 0], [1, 1, 1], [0, 0, 0]]; // Simple T-piece
+        }
+
+        const arena = Array.from({length: 20}, () => Array(12).fill(0));
+        const player = { pos: {x: 5, y: 0}, matrix: createPiece() };
+
+        function draw() {
+            context.fillStyle = '#000';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            player.matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        context.fillStyle = '#4ade80';
+                        context.fillRect(x + player.pos.x, y + player.pos.y, 1, 1);
+                    }
+                });
+            });
+        }
+
+        function update(time = 0) {
+            draw();
+            player.pos.y++;
+            if (player.pos.y > 18) player.pos.y = 0;
+            setTimeout(() => requestAnimationFrame(update), 500);
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.keyCode === 37) player.pos.x--;
+            else if (event.keyCode === 39) player.pos.x++;
+        });
+
+        update();
+    </script>
+</body>
+</html>
