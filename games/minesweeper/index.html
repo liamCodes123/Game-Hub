@@ -2,54 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Minesweeper</title>
+    <title>Super Hard Minesweeper</title>
     <style>
         body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
-        .grid { display: grid; grid-template-columns: repeat(10, 30px); gap: 2px; background: #1e293b; padding: 5px; border: 2px solid #00f2ff; }
-        .cell { width: 30px; height: 30px; background: #0f172a; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
-        .cell.revealed { background: #1e293b; cursor: default; }
+        .grid { display: grid; grid-template-columns: repeat(16, 25px); gap: 2px; background: #00f2ff; padding: 2px; border-radius: 4px; }
+        .cell { width: 25px; height: 25px; background: #1e293b; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .cell.revealed { background: #0f172a; cursor: default; }
         .cell.mine { background: #ff006e; }
+        .stats { margin: 15px; color: #00f2ff; font-size: 1.2rem; }
     </style>
 </head>
 <body>
-    <h2>MINESWEEPER</h2>
+    <div class="stats">Mines: 40 | <button onclick="location.reload()">Reset</button></div>
     <div class="grid" id="grid"></div>
     <a href="../../index.html" style="color: #64748b; margin-top: 20px; text-decoration: none;">← Back</a>
 
     <script>
-        const size = 10, minesCount = 15, grid = document.getElementById('grid'), cells = [];
-        let board = Array(size * size).fill(0);
+        const size = 16, mineCount = 40, gridIdx = [...Array(size*size).keys()];
+        const board = Array(size*size).fill(0);
+        const mines = gridIdx.sort(() => Math.random() - 0.5).slice(0, mineCount);
+        mines.forEach(m => board[m] = 'M');
 
-        // Place mines
-        let placed = 0;
-        while(placed < minesCount) {
-            let idx = Math.floor(Math.random() * 100);
-            if(board[idx] !== 'M') { board[idx] = 'M'; placed++; }
-        }
-
-        function init() {
-            board.forEach((val, i) => {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.onclick = () => reveal(i);
-                cell.oncontextmenu = (e) => { e.preventDefault(); cell.innerText = cell.innerText === '🚩' ? '' : '🚩'; };
-                grid.appendChild(cell);
-                cells.push(cell);
-            });
-        }
-
-        function reveal(i) {
-            if(board[i] === 'M') { alert('BOOM!'); location.reload(); }
-            else {
-                let count = 0;
-                const neighbors = [i-11, i-10, i-9, i-1, i+1, i+9, i+10, i+11];
-                neighbors.forEach(n => { if(n >= 0 && n < 100 && board[n] === 'M') count++; });
-                cells[i].innerText = count || '';
-                cells[i].classList.add('revealed');
-                cells[i].style.color = "#00f2ff";
-            }
-        }
-        init();
+        const gridEl = document.getElementById('grid');
+        gridIdx.forEach(i => {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.oncontextmenu = (e) => { e.preventDefault(); cell.innerText = cell.innerText ? '' : '🚩'; };
+            cell.onclick = () => {
+                if(board[i] === 'M') { 
+                    alert('GAME OVER'); location.reload(); 
+                } else {
+                    let count = 0;
+                    for(let x=-1; x<=1; x++) {
+                        for(let y=-1; y<=1; y++) {
+                            let ni = i + x + (y*size);
+                            if(ni >= 0 && ni < size*size && board[ni] === 'M') count++;
+                        }
+                    }
+                    cell.innerText = count || '';
+                    cell.classList.add('revealed');
+                    cell.style.color = ["","#3b82f6","#22c55e","#ef4444","#a855f7","#f97316","#06b6d4","#f43f5e","#1e293b"][count];
+                }
+            };
+            gridEl.appendChild(cell);
+        });
     </script>
 </body>
 </html>
