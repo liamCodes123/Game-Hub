@@ -27,146 +27,146 @@
 
     <script>
         let board = Array(9).fill("");
-        let isBot = true;
-        let active = true;
-        let turn = "X";
+let mode = "impossible"; // Options: "impossible", "pvp"
+let active = true;
+let turn = "X";
 
-        const gridElement = document.getElementById('grid');
-        const statusElement = document.getElementById('status');
-        const modeBtn = document.getElementById('modeBtn');
+const gridElement = document.getElementById('grid');
+const statusElement = document.getElementById('status');
+const modeBtn = document.getElementById('modeBtn');
 
-        // Initial Draw
-        function draw() {
-            gridElement.innerHTML = "";
-            board.forEach((value, i) => {
-                const cell = document.createElement('div');
-                cell.className = 'cell' + (value ? ' taken' : '');
-                cell.innerText = value;
-                cell.onclick = () => makeMove(i);
-                gridElement.appendChild(cell);
-            });
-        }
+function draw() {
+    gridElement.innerHTML = "";
+    board.forEach((value, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (value ? ' taken' : '');
+        cell.style.color = value === "X" ? "#00f2ff" : "#ff006e";
+        cell.innerText = value;
+        cell.onclick = () => makeMove(i);
+        gridElement.appendChild(cell);
+    });
+}
 
-        function makeMove(i) {
-            if (!active || board[i]) return;
+function makeMove(i) {
+    if (!active || board[i] || (mode === "impossible" && turn === "O")) return;
 
-            board[i] = turn;
-            draw();
+    board[i] = "X";
+    draw();
 
-            if (checkGameOver()) return;
+    if (checkGameOver()) return;
 
-            if (isBot) {
-                turn = "O";
-                statusElement.innerText = "Bot is thinking...";
-                active = false; // Disable clicks while bot "thinks"
-                setTimeout(botMove, 400);
-            } else {
-                turn = turn === "X" ? "O" : "X";
-                statusElement.innerText = `Turn: ${turn}`;
+    if (mode === "impossible") {
+        turn = "O";
+        statusElement.innerText = "Calculating your defeat...";
+        active = false; 
+        setTimeout(botMove, 500);
+    } else {
+        turn = turn === "X" ? "O" : "X";
+        statusElement.innerText = `Turn: ${turn}`;
+    }
+}
+
+function botMove() {
+    let bestScore = -Infinity;
+    let move;
+    
+    // Minimax checks every possible future to find the winning path
+    for (let i = 0; i < 9; i++) {
+        if (board[i] === "") {
+            board[i] = "O";
+            let score = minimax(board, 0, false);
+            board[i] = "";
+            if (score > bestScore) {
+                bestScore = score;
+                move = i;
             }
         }
+    }
+    
+    board[move] = "O";
+    active = true;
+    draw();
 
-        function botMove() {
-            let bestScore = -Infinity;
-            let move;
-            
-            for (let i = 0; i < 9; i++) {
-                if (board[i] === "") {
-                    board[i] = "O";
-                    let score = minimax(board, 0, false);
-                    board[i] = "";
-                    if (score > bestScore) {
-                        bestScore = score;
-                        move = i;
-                    }
-                }
-            }
-            
-            board[move] = "O";
-            active = true;
-            draw();
+    if (!checkGameOver()) {
+        turn = "X";
+        statusElement.innerText = "Try all you want. (Your Turn)";
+    }
+}
 
-            if (!checkGameOver()) {
-                turn = "X";
-                statusElement.innerText = "Your Turn (X)";
-            }
-        }
+const scores = { X: -10, O: 10, tie: 0 };
 
-        const scores = { X: -10, O: 10, tie: 0 };
+function minimax(board, depth, isMaximizing) {
+    let result = getWinner();
+    if (result !== null) return scores[result];
 
-        function minimax(board, depth, isMaximizing) {
-            let result = getWinner();
-            if (result !== null) return scores[result];
-
-            if (isMaximizing) {
-                let bestScore = -Infinity;
-                for (let i = 0; i < 9; i++) {
-                    if (board[i] === "") {
-                        board[i] = "O";
-                        let score = minimax(board, depth + 1, false);
-                        board[i] = "";
-                        bestScore = Math.max(score, bestScore);
-                    }
-                }
-                return bestScore;
-            } else {
-                let bestScore = Infinity;
-                for (let i = 0; i < 9; i++) {
-                    if (board[i] === "") {
-                        board[i] = "X";
-                        let score = minimax(board, depth + 1, true);
-                        board[i] = "";
-                        bestScore = Math.min(score, bestScore);
-                    }
-                }
-                return bestScore;
+    if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < 9; i++) {
+            if (board[i] === "") {
+                board[i] = "O";
+                let score = minimax(board, depth + 1, false);
+                board[i] = "";
+                bestScore = Math.max(score, bestScore);
             }
         }
-
-        function getWinner() {
-            const wins = [
-                [0,1,2], [3,4,5], [6,7,8], // Rows
-                [0,3,6], [1,4,7], [2,5,8], // Cols
-                [0,4,8], [2,4,6]           // Diagonals
-            ];
-            for (let w of wins) {
-                if (board[w[0]] && board[w[0]] === board[w[1]] && board[w[0]] === board[w[2]]) {
-                    return board[w[0]];
-                }
+        return bestScore;
+    } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < 9; i++) {
+            if (board[i] === "") {
+                board[i] = "X";
+                let score = minimax(board, depth + 1, true);
+                board[i] = "";
+                bestScore = Math.min(score, bestScore);
             }
-            return board.includes("") ? null : "tie";
         }
+        return bestScore;
+    }
+}
 
-        function checkGameOver() {
-            let result = getWinner();
-            if (result) {
-                active = false;
-                if (result === "tie") {
-                    statusElement.innerText = "It's a Draw!";
-                } else {
-                    statusElement.innerText = result === "O" && isBot ? "Bot Wins!" : `${result} Wins!`;
-                }
-                return true;
-            }
-            return false;
+function getWinner() {
+    const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+    for (let w of wins) {
+        if (board[w[0]] && board[w[0]] === board[w[1]] && board[w[0]] === board[w[2]]) return board[w[0]];
+    }
+    return board.includes("") ? null : "tie";
+}
+
+function checkGameOver() {
+    let result = getWinner();
+    if (result) {
+        active = false;
+        if (result === "tie") {
+            statusElement.innerText = "A draw is your only mercy.";
+        } else {
+            statusElement.innerText = result === "O" ? "IMPOSSIBLE BOT WINS" : "Wait... how?";
         }
+        return true;
+    }
+    return false;
+}
 
-        function toggleMode() {
-            isBot = !isBot;
-            modeBtn.innerText = isBot ? "Mode: vs Bot" : "Mode: Local PvP";
-            resetGame();
-        }
+function resetGame() {
+    board = Array(9).fill("");
+    turn = "X";
+    active = true;
+    statusElement.innerText = "Begin your failure (X)";
+    
+    // In Impossible mode, sometimes the bot takes the center immediately
+    if (mode === "impossible" && Math.random() > 0.5) {
+        board[4] = "O";
+        statusElement.innerText = "Bot took the center. Good luck.";
+    }
+    draw();
+}
 
-        function resetGame() {
-            board = Array(9).fill("");
-            turn = "X";
-            active = true;
-            statusElement.innerText = "Your Turn (X)";
-            draw();
-        }
+function toggleMode() {
+    mode = mode === "impossible" ? "pvp" : "impossible";
+    document.getElementById('modeBtn').innerText = mode === "impossible" ? "MODE: IMPOSSIBLE" : "MODE: PVP";
+    resetGame();
+}
 
-        // Initialize board on load
-        draw();
+draw();
     </script>
 </body>
 </html>
