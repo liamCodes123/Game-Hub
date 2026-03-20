@@ -5,95 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Arcade | Hub</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
 
     <nav class="navbar">
         <div class="logo">NEON<span>ARCADE</span></div>
-        <div class="search-container">
-            <input type="text" id="gameSearch" placeholder="Search games...">
-        </div>
+        <input type="text" id="gameSearch" placeholder="Search games...">
     </nav>
 
     <header class="hero">
         <h1>UNBEATABLE ARCADE</h1>
-        <p>Cross-device multiplayer and elite AI bots.</p>
+        <p>Elite AI and Lag-Free Multiplayer</p>
     </header>
 
     <main class="container">
         <div class="filter-bar">
-            <button class="filter-btn active" data-filter="all">All Games</button>
+            <button class="filter-btn active" data-filter="all">All</button>
             <button class="filter-btn" data-filter="multi">Multiplayer</button>
             <button class="filter-btn" data-filter="puzzle">Puzzle</button>
             <button class="filter-btn" data-filter="retro">Retro</button>
         </div>
 
         <div class="game-grid" id="gameGrid">
-            
             <div class="game-card" data-category="puzzle">
                 <div class="card-img">⭕</div>
                 <div class="card-info">
-                    <span class="tag">Minimax AI</span>
+                    <span class="tag">Impossible AI</span>
                     <h3>Tic-Tac-Toe</h3>
-                    <a href="games/tictactoe/index.html" class="btn-play">Play Solo</a>
+                    <a href="games/tictactoe/index.html" class="btn-play">Play Bot</a>
                 </div>
             </div>
 
             <div class="game-card" data-category="multi">
                 <div class="card-img">🏓</div>
                 <div class="card-info">
-                    <span class="tag">P2P Online</span>
+                    <span class="tag">Host/Join</span>
                     <h3>Neon Pong</h3>
                     <a href="games/pong/index.html" class="btn-play">Play Online</a>
                 </div>
             </div>
-
-            <div class="game-card" data-category="puzzle">
-                <div class="card-img">💣</div>
-                <div class="card-info">
-                    <span class="tag">Retro</span>
-                    <h3>Minesweeper</h3>
-                    <a href="games/minesweeper/index.html" class="btn-play">Play Now</a>
-                </div>
             </div>
-
-            <div class="game-card" data-category="retro">
-                <div class="card-img">🐦</div>
-                <div class="card-info">
-                    <span class="tag">Action</span>
-                    <h3>Neon Flappy</h3>
-                    <a href="games/flappy/index.html" class="btn-play">Play Now</a>
-                </div>
-            </div>
-
-            <div class="game-card" data-category="retro">
-                <div class="card-img">🧱</div>
-                <div class="card-info">
-                    <span class="tag">Classic</span>
-                    <h3>Block Fall</h3>
-                    <a href="games/tetris/index.html" class="btn-play">Play Now</a>
-                </div>
-            </div>
-
-        </div>
     </main>
-
-    <button id="chatToggle" class="chat-toggle-btn">💬 Chat</button>
-
-    <aside id="chatBox" class="chat-popup hidden">
-        <div class="chat-header">
-            <span>Global Lobby</span>
-            <button onclick="toggleChat()" class="close-chat">×</button>
-        </div>
-        <div id="chat-messages">
-            <div class="msg system">Connecting to global lobby...</div>
-        </div>
-        <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Type a message...">
-            <button id="sendChat">Send</button>
-        </div>
-    </aside>
 
     <script src="script.js"></script>
 </body>
