@@ -1,172 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Tic-Tac-Toe - Unbeatable Bot</title>
+    <meta charset="UTF-8"><title>Fixed TicTacToe</title>
     <style>
-        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; min-height: 100vh; justify-content: center; margin: 0; }
+        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; }
         .grid { display: grid; grid-template-columns: repeat(3, 100px); gap: 10px; margin-top: 20px; }
-        .cell { width: 100px; height: 100px; background: #1e293b; border: 2px solid #00f2ff; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .cell:hover { background: #334155; }
-        .cell.taken { cursor: not-allowed; }
-        .status { margin: 20px; font-size: 1.5rem; color: #00f2ff; height: 30px; }
-        .controls { margin-bottom: 10px; display: flex; gap: 10px; }
-        button { background: #00f2ff; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; color: #0f172a; }
-        button:hover { filter: brightness(1.2); }
-        .back-btn { color: #64748b; margin-top: 30px; text-decoration: none; font-size: 0.9rem; }
+        .cell { width: 100px; height: 100px; background: #1e293b; border: 2px solid #00f2ff; display: flex; align-items: center; justify-content: center; font-size: 3rem; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="status" id="status">Your Turn (X)</div>
-    <div class="controls">
-        <button onclick="resetGame()">Reset Game</button>
-        <button id="modeBtn" onclick="toggleMode()">Mode: vs Bot</button>
-    </div>
+    <div id="status">Turn: X</div>
     <div class="grid" id="grid"></div>
-    <a href="../../index.html" class="back-btn">← Back to Hub</a>
-
     <script>
-        let board = Array(9).fill("");
-let mode = "impossible"; // Options: "impossible", "pvp"
-let active = true;
-let turn = "X";
+        let board = Array(9).fill(""), turn = "X", active = true;
+        const grid = document.getElementById('grid');
 
-const gridElement = document.getElementById('grid');
-const statusElement = document.getElementById('status');
-const modeBtn = document.getElementById('modeBtn');
-
-function draw() {
-    gridElement.innerHTML = "";
-    board.forEach((value, i) => {
-        const cell = document.createElement('div');
-        cell.className = 'cell' + (value ? ' taken' : '');
-        cell.style.color = value === "X" ? "#00f2ff" : "#ff006e";
-        cell.innerText = value;
-        cell.onclick = () => makeMove(i);
-        gridElement.appendChild(cell);
-    });
-}
-
-function makeMove(i) {
-    if (!active || board[i] || (mode === "impossible" && turn === "O")) return;
-
-    board[i] = "X";
-    draw();
-
-    if (checkGameOver()) return;
-
-    if (mode === "impossible") {
-        turn = "O";
-        statusElement.innerText = "Calculating your defeat...";
-        active = false; 
-        setTimeout(botMove, 500);
-    } else {
-        turn = turn === "X" ? "O" : "X";
-        statusElement.innerText = `Turn: ${turn}`;
-    }
-}
-
-function botMove() {
-    let bestScore = -Infinity;
-    let move;
-    
-    // Minimax checks every possible future to find the winning path
-    for (let i = 0; i < 9; i++) {
-        if (board[i] === "") {
-            board[i] = "O";
-            let score = minimax(board, 0, false);
-            board[i] = "";
-            if (score > bestScore) {
-                bestScore = score;
-                move = i;
-            }
+        function draw() {
+            grid.innerHTML = "";
+            board.forEach((v, i) => {
+                const c = document.createElement('div');
+                c.className = 'cell'; c.innerText = v;
+                c.onclick = () => {
+                    if(!active || board[i]) return;
+                    board[i] = turn;
+                    check();
+                    turn = turn === "X" ? "O" : "X";
+                    document.getElementById('status').innerText = "Turn: " + turn;
+                    draw();
+                };
+                grid.appendChild(c);
+            });
         }
-    }
-    
-    board[move] = "O";
-    active = true;
-    draw();
 
-    if (!checkGameOver()) {
-        turn = "X";
-        statusElement.innerText = "Try all you want. (Your Turn)";
-    }
-}
-
-const scores = { X: -10, O: 10, tie: 0 };
-
-function minimax(board, depth, isMaximizing) {
-    let result = getWinner();
-    if (result !== null) return scores[result];
-
-    if (isMaximizing) {
-        let bestScore = -Infinity;
-        for (let i = 0; i < 9; i++) {
-            if (board[i] === "") {
-                board[i] = "O";
-                let score = minimax(board, depth + 1, false);
-                board[i] = "";
-                bestScore = Math.max(score, bestScore);
-            }
+        function check() {
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            wins.forEach(w => {
+                if(board[w[0]] && board[w[0]]==board[w[1]] && board[w[0]]==board[w[2]]) {
+                    active = false; alert(board[w[0]] + " Wins!"); location.reload();
+                }
+            });
+            if(!board.includes("") && active) { alert("Draw!"); location.reload(); }
         }
-        return bestScore;
-    } else {
-        let bestScore = Infinity;
-        for (let i = 0; i < 9; i++) {
-            if (board[i] === "") {
-                board[i] = "X";
-                let score = minimax(board, depth + 1, true);
-                board[i] = "";
-                bestScore = Math.min(score, bestScore);
-            }
-        }
-        return bestScore;
-    }
-}
-
-function getWinner() {
-    const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
-    for (let w of wins) {
-        if (board[w[0]] && board[w[0]] === board[w[1]] && board[w[0]] === board[w[2]]) return board[w[0]];
-    }
-    return board.includes("") ? null : "tie";
-}
-
-function checkGameOver() {
-    let result = getWinner();
-    if (result) {
-        active = false;
-        if (result === "tie") {
-            statusElement.innerText = "A draw is your only mercy.";
-        } else {
-            statusElement.innerText = result === "O" ? "IMPOSSIBLE BOT WINS" : "Wait... how?";
-        }
-        return true;
-    }
-    return false;
-}
-
-function resetGame() {
-    board = Array(9).fill("");
-    turn = "X";
-    active = true;
-    statusElement.innerText = "Begin your failure (X)";
-    
-    // In Impossible mode, sometimes the bot takes the center immediately
-    if (mode === "impossible" && Math.random() > 0.5) {
-        board[4] = "O";
-        statusElement.innerText = "Bot took the center. Good luck.";
-    }
-    draw();
-}
-
-function toggleMode() {
-    mode = mode === "impossible" ? "pvp" : "impossible";
-    document.getElementById('modeBtn').innerText = mode === "impossible" ? "MODE: IMPOSSIBLE" : "MODE: PVP";
-    resetGame();
-}
-
-draw();
+        draw();
     </script>
 </body>
 </html>
