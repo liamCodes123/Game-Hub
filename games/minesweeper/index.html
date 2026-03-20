@@ -1,51 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Super Hard Minesweeper</title>
+    <meta charset="UTF-8"><title>Evil Mines</title>
     <style>
-        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
-        .grid { display: grid; grid-template-columns: repeat(16, 25px); gap: 2px; background: #00f2ff; padding: 2px; border-radius: 4px; }
-        .cell { width: 25px; height: 25px; background: #1e293b; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
-        .cell.revealed { background: #0f172a; cursor: default; }
-        .cell.mine { background: #ff006e; }
-        .stats { margin: 15px; color: #00f2ff; font-size: 1.2rem; }
+        .g { display: grid; grid-template-columns: repeat(16, 25px); background: #00f2ff; gap: 1px; }
+        .c { width: 25px; height: 25px; background: #1e293b; color: white; text-align: center; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="stats">Mines: 40 | <button onclick="location.reload()">Reset</button></div>
-    <div class="grid" id="grid"></div>
-    <a href="../../index.html" style="color: #64748b; margin-top: 20px; text-decoration: none;">← Back</a>
-
+    <div class="g" id="b"></div>
     <script>
-        const size = 16, mineCount = 40, gridIdx = [...Array(size*size).keys()];
-        const board = Array(size*size).fill(0);
-        const mines = gridIdx.sort(() => Math.random() - 0.5).slice(0, mineCount);
-        mines.forEach(m => board[m] = 'M');
-
-        const gridEl = document.getElementById('grid');
-        gridIdx.forEach(i => {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.oncontextmenu = (e) => { e.preventDefault(); cell.innerText = cell.innerText ? '' : '🚩'; };
-            cell.onclick = () => {
-                if(board[i] === 'M') { 
-                    alert('GAME OVER'); location.reload(); 
-                } else {
-                    let count = 0;
-                    for(let x=-1; x<=1; x++) {
-                        for(let y=-1; y<=1; y++) {
-                            let ni = i + x + (y*size);
-                            if(ni >= 0 && ni < size*size && board[ni] === 'M') count++;
-                        }
-                    }
-                    cell.innerText = count || '';
-                    cell.classList.add('revealed');
-                    cell.style.color = ["","#3b82f6","#22c55e","#ef4444","#a855f7","#f97316","#06b6d4","#f43f5e","#1e293b"][count];
-                }
+        const b = document.getElementById('b'), board = [], size = 16;
+        for(let i=0; i<size*size; i++) {
+            const el = document.createElement('div'); el.className = 'c';
+            const isMine = Math.random() < 0.22; // 22% mine density
+            board.push({el, isMine});
+            el.onclick = () => {
+                if(isMine) { alert("BOOM"); location.reload(); }
+                el.style.background = "#0f172a"; el.innerText = "0";
             };
-            gridEl.appendChild(cell);
-        });
+            b.appendChild(el);
+        }
     </script>
 </body>
 </html>
